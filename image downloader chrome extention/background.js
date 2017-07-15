@@ -1,44 +1,60 @@
-var downloadData;
+chrome.contextMenus.create({"title": "Download Image", "contexts": ["image"], "onclick": ContextMenuOnClick});
+chrome.contextMenus.create({"title": "Download Video", "contexts": ["video"], "onclick": ContextMenuOnClick});
+
+function ContextMenuOnClick(info, tab) {
+	chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+		siteInfoArray.forEach(function(siteInfo) {
+			if(siteInfo.regex.test(tab.url)) {
+				chrome.tabs.sendMessage(tabs[0].id, new Message(siteInfo, info.srcUrl, info.mediaType));
+			}
+		})
+	});	
+}
 
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
-    //console.log(sender.tab ?
-    //            "from a content script:" + sender.tab.url :
-    //            "from the extension");
-
-	if (message.action == "RecieveName") {
-		downloadData.name = message.name;
-		chrome.downloads.download({ "url":message.url });
-    }
+	currentSite = message.site;
+	siteInfoArray.forEach(function(siteInfo) {
+		if(message.site == siteInfo.site) siteInfo.data = message.data;
+	});
+	chrome.downloads.download({"url":message.url, "conflictAction":"prompt" });
 });
 
 chrome.downloads.onDeterminingFilename.addListener(function (item, suggest) {
-	if(downloadData.site == "instagram") {
-		suggest({filename: downloadData.name + "/" + item.filename});
-		downloadData = null;
-	}
-	if(downloadData.site == "twitter") {
-		var filename = /(.*)[\-\:]large/g.exec(item.filename)[1];
-		suggest({filename: filename});
-		downloadData = null;		
-	}
-	else suggest();
+	siteInfoArray.forEach(function(siteInfo){
+		if(currentSite == siteInfo.site)
+			siteInfo.suggestCallback(siteInfo, item, suggest);
+	})
 });
 
-chrome.contextMenus.create({"title": "Download Image", "contexts": ["image", "video"], "onclick": function(info, tab) {
-	chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-		if(/.*twitter.*/.test(tab.url)) {
-			downloadData = {site:"twitter"};
-			chrome.downloads.download({ "url":info.srcUrl });
-		}
-		if(/.*instagram.*/.test(tab.url)) {
-			downloadData = {site:"instagram", name:""};
-			chrome.tabs.sendMessage(tabs[0].id, {action:"GetName", url: info.srcUrl});
-		}
-	});
-}});
+var currentSite;
+var siteInfoArray = [
+	new SiteInfo("twitter", /.*twitter.*/, "DoNothing", null, TwitterRename),
+	new SiteInfo("instagram", /.*instagram.*/, "GetName", {name:""}, InstagramRename)
+];	
 
-function genericOnClick(info, tab) {
-	console.log("item " + info.menuItemId + " was clicked");
-	console.log("info: " + JSON.stringify(info));
-	console.log("tab: " + JSON.stringify(tab));
+function SiteInfo(site, regex, action, data, suggestCallback) {
+	this.site = site;
+	this.regex = regex;
+	this.action = action;
+	this.data = data;
+	this.suggestCallback = suggestCallback;
 }
+
+function Message(siteInfo, url, mediaType) {
+	this.site = siteInfo.site;
+	this.url = url;
+	this.mediaType = mediaType;
+	this.action = siteInfo.action;
+	this.data = siteInfo.data;
+}
+
+function InstagramRename(siteInfo, item, suggest) {
+	var filename = siteInfo.site + "/" + siteInfo.data.name + "/" + item.filename;
+	suggest({filename: filename});
+}
+function TwitterRename(siteInfo, item, suggest) {
+	var filename = siteInfo.site + "/" + /(.*)[\-\:]large/g.exec(item.filename)[1];
+	suggest({filename: filename});
+}
+
+

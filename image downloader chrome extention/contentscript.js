@@ -1,34 +1,32 @@
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
-	if (message.action == "GetName") {
-        SendResponse(message.url);
-    }
+	if(message.action == "DoNothing")
+		chrome.runtime.sendMessage(message);
+	else if(message.action == "GetName") {
+		message.data.name = GetName(message.url, message.mediaType);
+	}
+	chrome.runtime.sendMessage(message);
 });
 
-function GetName(url) {
+function GetName(url, mediaType) {
 	var articleCSS = "_h2d1o _j5hrx _4xyiw _j64nz" // article
 	var nameCSS = "_4zhc5 notranslate _jozwt" // name
-	var imagedivCSS = "_jjzlb" // image div
 	var imageCSS = "_icyx7" // image
 	var videoCSS = "_c8hkj" // video
-
-	// don't have to worry about hidden pics/vids in albums
-	// _9a6xd _qwk2e coreSpriteRightChevron
-	// _9a6xd _envdc coreSpriteLeftChevron
-	
 	var articles = document.getElementsByClassName(articleCSS);
-	var names = document.getElementsByClassName(nameCSS);
-	var imagedivs = document.getElementsByClassName(imagedivCSS);
-	var images = document.getElementsByClassName(imageCSS);
-	var videos = document.getElementsByClassName(videoCSS);
-	
-	for(var i=0; i<images.length; i++) {
-		if (images[i].src == url) {
-			return names.length == 1 ? names[0].title : names[i].title;
+		
+	for(var i=0; i<articles.length; i++) {
+		if (mediaType == "image") {
+			var imagehtml = articles[i].getElementsByClassName(imageCSS)[0];
+			if (imagehtml != null && imagehtml.src == url) {
+				return articles[i].getElementsByClassName(nameCSS)[0].title;
+			}
+		}
+		if (mediaType == "video") {
+			var videohtml = articles[i].getElementsByClassName(videoCSS)[0];
+			if (videohtml != null && videohtml.src == url) {
+				return articles[i].getElementsByClassName(nameCSS)[0].title;
+			}
 		}
 	}
 }
 
-function SendResponse(url) {
-	var igname = GetName(url);
-	if(igname != "") chrome.runtime.sendMessage({action:"RecieveName", name: igname, url:url});
-}
