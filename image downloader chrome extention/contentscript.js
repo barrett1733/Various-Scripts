@@ -1,8 +1,9 @@
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
-	if(message.action == "DoNothing")
-		chrome.runtime.sendMessage(message);
-	else if(message.action == "GetName") {
+	if(message.action == "GetName") {
 		message.data.name = GetName(message.url, message.mediaType);
+	}
+	else if(message.action == "GetNameIGStory") {
+		message.data.name = GetNameIGStory();
 	}
 	chrome.runtime.sendMessage(message);
 });
@@ -30,3 +31,8 @@ function GetName(url, mediaType) {
 	}
 }
 
+function GetNameIGStory() {
+	var nameCSS = "storyAuthorAttribution"
+	var name = document.getElementsByClassName(nameCSS)[0].getElementsByTagName("P")[0].innerText;
+	return name;
+}

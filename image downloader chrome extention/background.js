@@ -3,41 +3,61 @@ chrome.contextMenus.create({"title": "Download Video", "contexts": ["video"], "o
 
 function ContextMenuOnClick(info, tab) {
 	chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-		siteInfoArray.forEach(function(siteInfo) {
-			if(siteInfo.regex.test(tab.url)) {
-				chrome.tabs.sendMessage(tabs[0].id, new Message(siteInfo, info.srcUrl, info.mediaType));
+		console.log(tab.url);
+		var matchFound = false;
+		regexTable.forEach(function(item) {
+			if(item.regex.test(tab.url)) {
+				chrome.tabs.sendMessage(tabs[0].id, new Message(siteInfoTable[item.site], info.srcUrl, info.mediaType));
+				matchFound = true;
+				console.log(tab.url);
 			}
 		})
+		if(!matchFound)
+			chrome.downloads.download({"url":info.srcUrl, "conflictAction":"prompt" });		
 	});	
 }
 
-chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
-	currentSite = message.site;
-	siteInfoArray.forEach(function(siteInfo) {
-		if(message.site == siteInfo.site) siteInfo.data = message.data;
-	});
-	chrome.downloads.download({"url":message.url, "conflictAction":"prompt" });
-});
+function getFilename(url) {
+	return /(.*(?:\\|\/)+)?((.*)(\.([^?\s]*)))\??(.*)?/g.exec(url)[2];
+}
 
-chrome.downloads.onDeterminingFilename.addListener(function (item, suggest) {
-	siteInfoArray.forEach(function(siteInfo){
-		if(currentSite == siteInfo.site)
-			siteInfo.suggestCallback(siteInfo, item, suggest);
-	})
-});
+chrome.runtime.onMessage.addListener(RecieveMessage);
+function RecieveMessage(message, sender, sendResponse) {
+	currentSite = message.site;
+	if(siteInfoTable[currentSite]) {
+		siteInfoTable[currentSite].data = message.data;
+	}
+	chrome.downloads.download({"url":message.url, "conflictAction":"prompt"});
+}
+
+chrome.downloads.onDeterminingFilename.addListener(DetermineFilename);
+function DetermineFilename(item, suggest) {
+	if(siteInfoTable[currentSite]) {
+		suggest({filename: siteInfoTable[currentSite].filenameCallBack(siteInfoTable[currentSite], item.filename)});
+	}
+	else {
+		suggest({filename: item.filename});
+	}
+	currentSite = "";
+}
 
 var currentSite;
-var siteInfoArray = [
-	new SiteInfo("twitter", /.*twitter.*/, "DoNothing", null, TwitterRename),
-	new SiteInfo("instagram", /.*instagram.*/, "GetName", {name:""}, InstagramRename)
-];	
+var regexTable = [
+	{site:"twitter", regex:/.*twitter/g},
+	{site:"instagram", regex:/.*instagram/g},
+	{site:"ig story", regex:/.*bojgejgifofondahckoaahkilneffhmf.*/},
+	];
+var siteInfoTable = {
+	"twitter": new SiteInfo("twitter", "DoNothing", null, TwitterRename),
+	"instagram": new SiteInfo("instagram", "GetName", {name:""}, InstagramRename),
+	"ig story": new SiteInfo("ig story", "GetNameIGStory", {name:""}, InstagramRename)
+};
 
-function SiteInfo(site, regex, action, data, suggestCallback) {
+function SiteInfo(site, action, data, filenameCallBack) {
 	this.site = site;
-	this.regex = regex;
 	this.action = action;
 	this.data = data;
-	this.suggestCallback = suggestCallback;
+	this.filenameCallBack = filenameCallBack;
 }
 
 function Message(siteInfo, url, mediaType) {
@@ -48,13 +68,14 @@ function Message(siteInfo, url, mediaType) {
 	this.data = siteInfo.data;
 }
 
-function InstagramRename(siteInfo, item, suggest) {
-	var filename = siteInfo.site + "/" + siteInfo.data.name + "/" + item.filename;
-	suggest({filename: filename});
-}
-function TwitterRename(siteInfo, item, suggest) {
-	var filename = siteInfo.site + "/" + /(.*)[\-\:]large/g.exec(item.filename)[1];
-	suggest({filename: filename});
+function TwitterRename(siteInfo, filename) {
+	return siteInfo.site + "/" + /(.*)[\-\:]large/g.exec(filename)[1];
 }
 
+function InstagramRename(siteInfo, filename) {
+	if(siteInfo.data.name == "")
+		return siteInfo.site + "/" + filename;
+	else
+		return siteInfo.site + "/" + siteInfo.data.name + "/" + filename;
+}
 
