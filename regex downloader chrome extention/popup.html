@@ -1,0 +1,47 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Getting Started Extension's Popup</title>
+    <style>
+        body {
+            font-family: "Segoe UI", "Lucida Grande", Tahoma, sans-serif;
+            font-size: 100%;
+			min-width: 0;
+			max-width: 400px;
+        }
+        #result {
+            text-align: left;
+            background-color: white;
+            box-sizing: border-box;
+            padding: 2px 2px 2px;
+            border-width: 1px;
+            border-style: outset;
+            border-color: black;
+            border-image: none;
+        }
+		#html_extention_popup {
+			display: none;
+			max-width: 400px;
+		}
+        #downloadButton_extention_popup, #regex_extention_popup {
+            max-width: 400px;
+        }
+        #results_extention_popup {
+            /* avoid an excessively wide status text */
+            white-space: pre;
+            text-overflow: ellipsis;
+            overflow: auto;
+            max-width: 400px;
+        }
+    </style>
+    <script src="jquery.js"></script>
+    <script src="popup.js"></script>
+  </head>
+  <body>
+    <input type="text" id="regex_extention_popup" autofocus>
+	<button type="button" id="downloadButton_extention_popup">Download All</button>
+    <div id="results_extention_popup"></div>
+	<div id="html_extention_popup"></div>
+  </body>
+</html>
+

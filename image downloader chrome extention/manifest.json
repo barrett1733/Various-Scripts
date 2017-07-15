@@ -1,0 +1,25 @@
+{
+  "manifest_version": 2,
+  "name": "Image Downloader",
+  "version": "1.0",
+  
+  "description": "Blah blah blah",
+  
+  "content_scripts": [
+    {
+      "matches": ["https://www.instagram.com/*", "https://twitter.com/*"],
+	  "js": ["contentscript.js"]
+    }
+  ],
+  
+  "background": {
+    "scripts": ["background.js"]
+  },
+  
+  "permissions": [
+    "activeTab",
+	"downloads",
+	"contextMenus",
+    "https://ajax.googleapis.com/"
+  ]
+}
