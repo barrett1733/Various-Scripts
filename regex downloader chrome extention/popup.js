@@ -22,11 +22,11 @@ function getFromPage(actionStr, callback) {
 }
 
 function storeHtml(html) {
-	document.getElementById(htmlElement).innerHTML = html;
+	document.getElementById(htmlElement).innerText = html;
 }
 
 function processInput() {
-	var html = document.getElementById(htmlElement).innerHTML;
+	var html = document.getElementById(htmlElement).innerText;
 	var str = document.getElementById(regexElement).value;
 	var results = document.getElementById(resultsElement);
 	

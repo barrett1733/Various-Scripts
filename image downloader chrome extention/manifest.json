@@ -17,7 +17,7 @@
   },
   
   "permissions": [
-    "activeTab",
+    "tabs",
 	"downloads",
 	"contextMenus",
     "https://ajax.googleapis.com/"
